@@ -1,0 +1,151 @@
+<html ng-app="" ng-controller="studentController">
+  <head>
+    <title>Get Comments from Posts</title>
+  </head>
+  <link rel="stylesheet" href="css/style.css">
+  <body >
+    <h1>UserName = {{user_id}}<h1><br><br>
+    <div ng-repeat="post in posts" >
+      <h2>{{ post.post_value }}</h2>
+      <div ng-repeat="comment in comments[post.id]">
+        <h4>{{ comment.id }} {{ comment.comment }}</h4>
+          <div ng-repeat="reply in replies[post.id][comment.id]">
+           <h6>{{ reply.id }} {{ reply.reply }}</h6>
+          </div>
+         <input    type="text" ng-model="reply_new[(posts.length*post.id)+comment.id]"></input>
+         <button   ng-click="Add_Reply(post.id,comment.id)">Reply</button>
+         <button   ng-click="Show_Replies(post.id,comment.id)">Show Replies</button>
+      </div>
+      <br><br>
+      {{post.id}}
+      <input   type="text" ng-model="comment_new[post.id]"></input>
+      <button   ng-click="Add_Comment(post.id)">Comment</button>
+     <button    ng-click="Show_Comments(post.id)">Show Comments</button> 
+     <br><br>
+    </div>
+    <input  ng-model="post_new"></input>
+    <button  type="submit" ng-click="Add_Post()">Post</button>
+    <br>
+    <a href="/" ng-click="logout();return ">LOG OUT</a>
+  </body>
+</html>
+<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>
+<script>
+function studentController($scope,$http) {
+  
+  $scope.post_new;
+  $scope.comment_new=[];
+  $scope.reply_new=[];
+  $scope.posts=[];
+  $scope.id;
+  $scope.comments=[];
+  $scope.replies=[];
+   
+  angular.element(document).ready(function () {
+     $http.post("/getposts",{ 'user_id':1 }).success( function(response) {
+                   $scope.id=Object.keys(response[0]).length;
+                   $scope.posts= response[0];
+                   $scope.user_id=response[1].user_id;
+                 });
+            });
+  $scope.logout=function()
+  {
+        $http.post("/logout",{  }).success( function(response) {
+                
+              });
+  } 
+
+  $scope.Add_Post=function()
+    {
+      //user_id also needed here
+      /*Generate a random id and create a new post with it.
+        In user table add a post of this user and also update the post table 
+        for a new post_id generation but comment list is null
+      */
+      $scope.id+=1;
+      $http.post("/addpost",{ 'post_id' : $scope.id ,'user_id':$scope.user_id,'post_value':$scope.post_new }).success( function(response) {
+                   //$scope.comments[post_id] = response;
+                   var id=response.id;
+                   $scope.posts.push({'id':id,'post_value':$scope.post_new});
+                 });
+    }
+    $scope.Add_Comment=function(post_id){
+      /*
+               for this user and this particular post add a new comment
+      */
+      if($scope.comments[post_id]==undefined)
+      {
+                  $scope.comments[post_id]=[];
+      }
+      console.log("adding comment with post id "+post_id);
+      $http.post("/addcomment",{ 'post_id' :post_id,'user_id':$scope.user_id,'comment':$scope.comment_new[post_id] }).success( function(response) {
+              var id=response.id;
+              $scope.comments[post_id].push({'id':id,'comment':$scope.comment_new[post_id],'author_name':"fdfdf"});
+                   //$scope.comments[post_id] = response;
+                 });
+      //$scope.comment_new="";
+    }
+    $scope.Add_Reply=function(post_id,comment_id){
+      /*
+               for this user and this particular post add a new comment
+      */
+      console.log('inside ');
+      if($scope.replies[post_id]==undefined)
+      {
+                  console.log(" initializing ");
+                  $scope.replies[post_id]=[];
+                  $scope.replies[post_id][comment_id]=[];
+      }
+      if($scope.replies[post_id][comment_id]==undefined)
+      {
+                  $scope.replies[post_id][comment_id]=[];
+      }
+      console.log($scope.reply_new[($scope.posts.length*post_id)+comment_id]);
+      console.log(post_id);
+      console.log(comment_id); 
+      $http.post("/addreply",{ 'comment_id':comment_id,'post_id' :post_id,'user_id':$scope.user_id,'reply':$scope.reply_new[($scope.posts.length*post_id)+comment_id] }).success( function(response) {
+         var id=response.id;
+         $scope.replies[post_id][comment_id].push({'id':id,'reply':$scope.reply_new[($scope.posts.length*post_id)+comment_id],'author_name':"fdfdf"});              
+                 });
+    }
+     $scope.Show_Comments = function(post_id) 
+    {
+      /*
+             for this particular post_id generate all the comments
+      */
+      //user_id NOT needed here            
+                if($scope.comments[post_id]==undefined)
+                {
+                  $scope.comments[post_id]=[];
+                }  
+                //$scope.comments[post_id].push({'comment':$scope.comment_new[post_id],'author_name':"fdfdf"});
+                //$scope.comments[post_id].push({'comment':"232fdsf",'author_name':"rwerfdfdf"});
+                //alert(post_id);
+                $http.post("/getcomments",{ 'post_id' : post_id , 'user_id':$scope.user_id}).success( function(response) {
+                   $scope.comments[post_id] = response;
+                 });
+    }
+     $scope.Show_Replies = function(post_id,comment_id) 
+    {
+      /*
+             for this particular post_id generate all the comments
+      */
+      //user_id NOT needed here            
+                if($scope.replies[post_id]==undefined)
+                {
+                  $scope.replies[post_id]=[];
+                  $scope.replies[post_id][comment_id]=[];
+                }
+                if($scope.replies[post_id][comment_id]==undefined)
+                {
+                  $scope.replies[post_id][comment_id]=[];
+                }
+                //$scope.comments[post_id].push({'comment':$scope.comment_new[post_id],'author_name':"fdfdf"});
+                //$scope.comments[post_id].push({'comment':"232fdsf",'author_name':"rwerfdfdf"});
+                //alert(post_id);
+                $http.post("/getreplies",{'comment_id':comment_id, 'post_id' : post_id , 'user_id':$scope.user_id}).success( function(response) {
+                      $scope.replies[post_id][comment_id]=response;
+                 });
+    }
+}
+</script>
