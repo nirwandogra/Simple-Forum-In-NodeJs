@@ -22,4 +22,5 @@ app.get('/', function(req, res) {
 });
 require('./routes')(app);
 app.listen(port);
+//listening on port
 console.log('The magic happens on port ' + port);
