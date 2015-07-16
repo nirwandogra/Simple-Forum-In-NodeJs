@@ -13,7 +13,8 @@ app.use(session({
 	activeDuration: 5 * 60 * 1000,
 }));
 app.use(bodyParser());
-
+//listening on port
+//checking pull
 app.use(express.static('public'));
 
 app.get('/', function(req, res) {
